@@ -46,6 +46,38 @@ Object run_node(Node* node) {
       
       return *node->token->obj.obj_ptr;
     
+    case NODE_CALLFUNC: {
+
+
+      break;
+    }
+    
+    case NODE_ARRAY: {
+      Object obj;
+      obj.type = OBJ_ARRAY;
+
+      for(auto&&i:node->list)
+        obj.list.emplace_back(run_node(i));
+      
+      return obj;
+    }
+
+    case NODE_INDEXREF: {
+      auto obj = run_node(node->lhs);
+      auto index = run_node(node->rhs);
+
+      if(obj.type!=OBJ_ARRAY)
+        error(node->token->pos,"object is not an array");
+      
+      if(index.type!=OBJ_INT)
+        error(node->token->pos,"index is must be an integer");
+      
+      if(index.v_int<0||index.v_int>=obj.list.size())
+        error(node->token->pos,"index out of range");
+      
+      return obj.list[index.v_int];
+    }
+
     case NODE_ASSIGN: {
       if(node->lhs->type==NODE_VARIABLE){
         auto ptr = find_var(node->lhs->token->str);

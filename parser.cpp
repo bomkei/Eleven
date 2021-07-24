@@ -62,6 +62,17 @@ Node* primary() {
       auto x = new Node(NODE_VARIABLE);
       x->token = token;
       next();
+
+      if( consume("(") ) {
+        x->type = NODE_CALLFUNC;
+
+        if(!consume(")")){
+          do{ x->list.emplace_back(expr()); }
+          while( consume(",") );
+          expect(")");
+        }
+      }
+
       return x;
     }
   }
@@ -69,11 +80,35 @@ Node* primary() {
   error(token->pos, "syntax error");
 }
 
+Node* indexref() {
+  auto x= primary();
+  while(check()&&consume("[")){
+    x=new Node(NODE_INDEXREF,x,expr());
+    expect("]");
+  }
+  return x;
+}
+
+Node* memberaccess() {
+  auto x = indexref();
+  while(check()&&consume(".")){
+    x=new Node(NODE_MEMBERACCESS,x,indexref());
+  }
+  return x;
+}
+
+Node* unary() {
+  if(consume("-"))
+    return new Node(NODE_SUB,new Node,memberaccess());
+  
+  return memberaccess();
+}
+
 Node* mul() {
-  auto x = primary();
+  auto x = unary();
   while( check() )
-    if(consume("*")) x=new Node(NODE_MUL,x,primary());
-    else if(consume("/")) x=new Node(NODE_DIV,x,primary());
+    if(consume("*")) x=new Node(NODE_MUL,x,unary());
+    else if(consume("/")) x=new Node(NODE_DIV,x,unary());
     else break;
   return x;
 }
