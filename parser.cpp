@@ -98,7 +98,7 @@ Node* assign() {
 }
 
 Node* expr() {
-  return add();
+  return assign();
 }
 
 Node* stmt() {
