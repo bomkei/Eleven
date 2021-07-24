@@ -154,7 +154,7 @@ Node* parse(Token* tok) {
  auto x = new Node(NODE_SCOPE);
 
   while( check() ) {
-
+    x->list.emplace_back(stmt());
   }
 
   return x;

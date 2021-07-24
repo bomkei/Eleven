@@ -186,18 +186,6 @@ Token* tokenize() {
     pass_space();
   }
 
-alert;
-/*
-  for( auto tk = top.next; tk->next &&tk->next->type != TOK_END; ) {
-    if( tk->str == "\n" && tk->next->str == "\n" ) {
-      auto del = tk->next;
-      tk->next = tk->next->next;
-      delete del;
-    }
-    else
-      tk = tk->next;
-  }*/
-
-alert;
+  cur = new Token(TOK_END, cur, position);
   return top.next;
 }
