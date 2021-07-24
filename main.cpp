@@ -8,7 +8,7 @@ std::string readfile(char const* path) {
     std::cout << "";
     exit(1);
   }
-  
+
   while( std::getline(ifs, line) ) {
     ret += line + '\n';
   }
@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 
   prg->source = readfile("test.txt");
 
-  std::cout << prg->source;
+  //std::cout << prg->source;
   
 alert;
   auto token = tokenize();
@@ -31,7 +31,7 @@ alert;
   auto node = parse(token);
 
 alert;
-  std::cout<< node2str(node)<< '\n';
+  //std::cout<< node2str(node)<< '\n';
 
 alert;
   auto obj = run_node(node);

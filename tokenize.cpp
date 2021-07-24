@@ -72,7 +72,7 @@ namespace {
   }
 
   void pass_space() {
-    while( check() && peek() != '\n' && peek() <= ' ' )
+    while( check() && peek() <= ' ' )
       next();
   }
 }
