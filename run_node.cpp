@@ -75,6 +75,18 @@ Object run_node(Node* node) {
       break;
     }
 
+    case NODE_IF: {
+      auto cond = run_node(node->lhs);
+      if(cond.type!=OBJ_BOOL) error(node->token->pos,"condition must be boolean");
+      
+      if(cond.v_bool)
+        run_node(node->rhs);
+      else if(node->list.size())
+        run_node(node->list[0]);
+      
+      break;
+    }
+
     default: {
       auto lhs = run_node(node->lhs);
       auto rhs = run_node(node->rhs);
