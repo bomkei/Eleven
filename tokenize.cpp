@@ -46,7 +46,6 @@ static auto p_tokens = {
   "*",
   "/",
   "@",
-  "\n",
 };
 
 namespace {
@@ -188,7 +187,8 @@ Token* tokenize() {
   }
 
 alert;
-  for( auto tk = top.next; tk->next && tk->next->type != TOK_END; ) {
+/*
+  for( auto tk = top.next; tk->next &&tk->next->type != TOK_END; ) {
     if( tk->str == "\n" && tk->next->str == "\n" ) {
       auto del = tk->next;
       tk->next = tk->next->next;
@@ -196,7 +196,7 @@ alert;
     }
     else
       tk = tk->next;
-  }
+  }*/
 
 alert;
   return top.next;

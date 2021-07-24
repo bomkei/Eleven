@@ -48,6 +48,14 @@ enum {
   NODE_MUL,
   NODE_DIV,
 
+  NODE_ASSIGN,
+
+  NODE_SCOPE,
+
+  NODE_IF,
+  NODE_FOR,
+  NODE_FOREACH,
+
   NODE_VALUE,
   NODE_VARIABLE
 };
@@ -109,11 +117,11 @@ struct Object {
     return "";
   }
 
-  bool Eval() const {
+  //bool Eval() const {
+    
 
-
-    return false;
-  }
+   // return false;
+  //}
 };
 
 struct Token {

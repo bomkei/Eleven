@@ -27,6 +27,12 @@ namespace {
       error(token->pos, Utils::Format("expect '%s'", str));
     }
   }
+
+  void expect_s(char const* str){
+    if(token->str!=str){
+      error(token->pos, Utils::Format("expect '%s'", str));
+    }
+  }
 }
 
 Node::Node(Node::Type type)
@@ -81,17 +87,75 @@ Node* add() {
   return x;
 }
 
+Node* assign() {
+  auto x = add();
+
+  if(consume("=")){
+    x=new Node(NODE_ASSIGN,x,assign());
+  }
+
+  return x;
+}
+
 Node* expr() {
   return add();
 }
 
 Node* stmt() {
   
+ if(consume("{")){
+   auto node = new Node(NODE_SCOPE);
+   auto closed=false;
+   while(check()){
+    if(consume("}")) { closed=true; break; }
+    node->list.emplace_back(stmt());
+   }
+ if(!closed){
+   error(node->token->pos,"not closed");
+ }
+
+   return node;
+ }
+
+  if(consume("if")){
+    auto node = new Node(NODE_IF);
+
+    node->lhs = expr();
+    expect_s("{");
+    node->rhs=stmt();
+    if(consume("else")) node->list.emplace_back(stmt());
+
+    return node;
+  }
+
+  if(consume("for")){
+    auto node = new Node(NODE_FOR);
+     for(i8 i=0;i<2;i++){
+    node->list.emplace_back(expr());
+    expect(";");
+     }
+
+    node->list.emplace_back(expr());
+    expect_s("{");
+    node->lhs=stmt();
+    
+    return node;
+  }
+
   
+  auto x=expr();
+  expect(";");
+  return x;
 }
 
 Node* parse(Token* tok) {
   token = tok;
   
-  return expr();
+ auto x = new Node(NODE_SCOPE);
+
+  while( check() ) {
+
+  }
+
+  return x;
 }

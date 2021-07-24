@@ -15,6 +15,23 @@ void AdjustObjectType(Object& L, Object& R) {
 
 }
 
+std::list<Node*> scope_list;
+
+Object::ObjPointer find_var(std::string const& name) {
+  for(auto it=scope_list.rbegin(); it!=scope_list.rend(); it++ ) {
+    for(u64 i=0;i<(*it)->obj_list.size();i++){
+      if((*it)->obj_list[i].name==name)
+        return{ *it, i };
+    }
+  }
+
+  return { };
+}
+
+Node* get_cur_scope() {
+  return * scope_list.rbegin();
+}
+
 Object run_node(Node* node) {
   if( !node )
     return { };
@@ -29,6 +46,35 @@ Object run_node(Node* node) {
       
       return *node->token->obj.obj_ptr;
     
+    case NODE_ASSIGN: {
+      if(node->lhs->type==NODE_VARIABLE){
+        auto ptr = find_var(node->lhs->token->str);
+
+        if(!ptr.scope){
+          node->lhs->token->obj.obj_ptr = { get_cur_scope(), get_cur_scope()->obj_list.size() };
+          get_cur_scope()->obj_list.emplace_back(node->lhs->token->obj);
+        }
+      }
+
+      auto dest = run_node(node->lhs);
+      auto src = run_node(node->rhs);
+
+      *dest.obj_ptr = src;
+      dest.obj_ptr->name = dest.name;
+
+      return src;
+    }
+
+    case NODE_SCOPE: {
+      scope_list.push_back(node);
+
+      for(auto&&i:node->list)
+        run_node(i);
+
+      scope_list.pop_back();
+      break;
+    }
+
     default: {
       auto lhs = run_node(node->lhs);
       auto rhs = run_node(node->rhs);
