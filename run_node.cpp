@@ -17,6 +17,10 @@ void AdjustObjectType(Object& L, Object& R) {
 
 std::list<Node*> scope_list;
 
+Node* get_cur_scope() {
+  return * scope_list.rbegin();
+}
+
 namespace{
   bool* loop_breaked;
   bool* loop_continued;
@@ -33,8 +37,14 @@ Object::ObjPointer find_var(std::string const& name) {
   return { };
 }
 
-Node* get_cur_scope() {
-  return * scope_list.rbegin();
+void make_var(Node* node) {
+  if(node->type!=NODE_VARIABLE)
+    return;
+
+  if(!find_var(node->token->str).scope){
+    node->token->obj.obj_ptr = { get_cur_scope(), get_cur_scope()->obj_list.size() };
+    get_cur_scope()->obj_list.emplace_back(node->token->obj);
+  }
 }
 
 Object run_node(Node* node) {
@@ -96,14 +106,7 @@ Object run_node(Node* node) {
     }
 
     case NODE_ASSIGN: {
-      if(node->lhs->type==NODE_VARIABLE){
-        auto ptr = find_var(node->lhs->token->str);
-
-        if(!ptr.scope){
-          node->lhs->token->obj.obj_ptr = { get_cur_scope(), get_cur_scope()->obj_list.size() };
-          get_cur_scope()->obj_list.emplace_back(node->lhs->token->obj);
-        }
-      }
+      make_var(node->lhs);
 
       auto dest = run_node(node->lhs);
       auto src = run_node(node->rhs);
@@ -113,6 +116,7 @@ Object run_node(Node* node) {
 
       *dest.obj_ptr = src;
       dest.obj_ptr->name = dest.name;
+      //dest.obj_ptr->obj_ptr = dest.obj_ptr;
 
       return src;
     }
@@ -139,7 +143,90 @@ Object run_node(Node* node) {
       break;
     }
 
+    case NODE_FOR: {
+      run_node(node->list[0]);
 
+      auto p1=loop_breaked;
+      auto p2=loop_continued;
+
+      auto lb=false;
+      auto lc=false;
+      loop_breaked=&lb;
+      loop_continued=&lc;
+
+      while(1){
+        auto cond = run_node(node->list[1]);
+        if(cond.type!=OBJ_BOOL) error(node->token->pos,"condition is must be boolean");
+        if(!cond.v_bool) break;
+
+        run_node(node->lhs);
+        lb=lc=0;
+        run_node(node->list[2]);
+        if(lb)break;
+      }
+
+      loop_breaked=p1;
+      loop_continued=p2;
+
+      break;
+    }
+
+    case NODE_FOREACH: {
+      make_var(node->lhs);
+      auto iterator = run_node(node->lhs);
+      
+      auto p1=loop_breaked;
+      auto p2=loop_continued;
+
+      auto lb=false;
+      auto lc=false;
+      loop_breaked=&lb;
+      loop_continued=&lc;
+
+      if(!iterator.obj_ptr.scope)
+        error(node->token->pos,"iterator is rvalue");
+
+      u64 index = 0;
+      while(1) {
+        auto content = run_node(node->rhs);
+        if(content.type!=OBJ_ARRAY)
+          error(node->rhs->token->pos,"content is not an array");
+        
+        *iterator.obj_ptr = content.list[index++];
+
+        *loop_breaked = false;
+        *loop_continued = false;
+        run_node(node->list[0]);
+
+        if(*loop_breaked) break;
+      }
+
+      loop_breaked=p1;
+      loop_continued=p2;
+
+      break;
+    }
+
+    case NODE_BREAK: {
+      if(!loop_breaked)
+        error(node->token->pos,"here is not inner of loop statement");
+      
+      *loop_breaked=true;
+      break;
+    }
+
+    case NODE_CONTINUE: {
+      if(!loop_continued)
+        error(node->token->pos,"here is not inner of loop statement");
+      
+      *loop_continued=true;
+      break;
+    }
+
+    case NODE_RETURN: {
+
+      break;
+    }
 
     default: {
       auto lhs = run_node(node->lhs);

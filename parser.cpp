@@ -197,6 +197,26 @@ Node* stmt() {
     return node;
   }
 
+  if(consume("break")){
+    auto x = new Node(NODE_BREAK);
+    expect(";");
+    return x;
+  }
+
+  if(consume("continue")){
+    auto x = new Node(NODE_CONTINUE);
+    expect(";");
+    return x;
+  }
+
+  if(consume("return")){
+    if(consume(";")) return new Node(NODE_RETURN);
+    auto x=new Node(NODE_RETURN);
+    x->lhs=expr();
+    expect(";");
+    return x;
+  }
+
   
   auto x=expr();
   expect(";");
