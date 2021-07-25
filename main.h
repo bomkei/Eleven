@@ -12,7 +12,13 @@
 #include <list>
 #include <map>
 
-#define alert fprintf(stderr,"\t%s %d\n",__FILE__,__LINE__)
+#define __DEBUG__ 1
+
+#if __DEBUG__
+  #define alert fprintf(stderr,"\t%s %d\n",__FILE__,__LINE__)
+#else
+  #define alert 0
+#endif
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -55,6 +61,10 @@ enum {
   NODE_IF,
   NODE_FOR,
   NODE_FOREACH,
+
+  NODE_BREAK,
+  NODE_CONTINUE,
+  NODE_RETURN,
 
   NODE_INDEXREF,
   NODE_MEMBERACCESS,

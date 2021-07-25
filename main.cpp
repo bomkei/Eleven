@@ -22,22 +22,11 @@ int main(int argc, char** argv) {
 
   prg->source = readfile("test.txt");
 
-  //std::cout << prg->source;
-  
-alert;
   auto token = tokenize();
 
-alert;
   auto node = parse(token);
 
-alert;
-  //std::cout<< node2str(node)<< '\n';
-
-alert;
   auto obj = run_node(node);
-
-alert;
-  std::cout << obj << '\n';
 
   Program::Pop();
 }

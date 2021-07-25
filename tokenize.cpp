@@ -151,6 +151,7 @@ Token* tokenize() {
 
       while( check() && (ch = peek()) != '"' ) {
         cur->str += ch;
+        next();
       }
 
       next();

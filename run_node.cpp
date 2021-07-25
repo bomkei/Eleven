@@ -17,6 +17,11 @@ void AdjustObjectType(Object& L, Object& R) {
 
 std::list<Node*> scope_list;
 
+namespace{
+  bool* loop_breaked;
+  bool* loop_continued;
+}
+
 Object::ObjPointer find_var(std::string const& name) {
   for(auto it=scope_list.rbegin(); it!=scope_list.rend(); it++ ) {
     for(u64 i=0;i<(*it)->obj_list.size();i++){
@@ -40,15 +45,27 @@ Object run_node(Node* node) {
     case NODE_VALUE:
       return node->token->obj;
     
-    case NODE_VARIABLE:
-      if( !node->token->obj.obj_ptr.scope )
-        error(node->token->pos, "cannot use variable before assignment");
-      
-      return *node->token->obj.obj_ptr;
-    
+    case NODE_VARIABLE: {
+      auto find = find_var(node->token->str);
+
+      if(!find.scope)
+        error(node->token->pos,"cannot use variable before assignment");
+
+      return *find;
+    }
+
     case NODE_CALLFUNC: {
+      auto const& name = node->token->str;
+      std::vector<Object> args;
 
-
+      for(auto&&i:node->list)
+        args.emplace_back(run_node(i));
+      
+      if(name=="print"){
+        for(auto&&i:args) std::cout << i;
+        std::cout << std::endl;
+      }
+      
       break;
     }
     
@@ -91,6 +108,9 @@ Object run_node(Node* node) {
       auto dest = run_node(node->lhs);
       auto src = run_node(node->rhs);
 
+      if(!dest.obj_ptr.scope)
+        error(node->token->pos,"left side is rvalue");
+
       *dest.obj_ptr = src;
       dest.obj_ptr->name = dest.name;
 
@@ -118,6 +138,8 @@ Object run_node(Node* node) {
       
       break;
     }
+
+
 
     default: {
       auto lhs = run_node(node->lhs);

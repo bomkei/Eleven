@@ -49,6 +49,16 @@ Node* primary() {
     expect(")");
     return x;
   }
+
+  if(consume("[")){
+    auto x = new Node(NODE_ARRAY);
+    if(!consume("]")){
+      do{x->list.emplace_back(expr());}
+      while(consume(","));
+      expect("]");
+    }
+    return x;
+  }
   
   switch( token->type ) {
     case TOK_IMM: {
@@ -174,6 +184,16 @@ Node* stmt() {
     expect_s("{");
     node->lhs=stmt();
     
+    return node;
+  }
+
+  if(consume("foreach")){
+    auto node = new Node(NODE_FOREACH);
+    node->lhs = expr(); // iterator
+    expect("in");
+    node->rhs = expr(); // content
+    expect_s("{");
+    node->list.emplace_back(stmt());
     return node;
   }
 
