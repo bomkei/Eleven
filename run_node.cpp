@@ -149,7 +149,7 @@ Object run_node(Node* node) {
         else if(obj.type==OBJ_STRING)
           Utils::Reverse(obj.v_str);
         else
-          goto errjmp;
+          error(nd->token->pos,"object is not array or string");
       }
       else if(name=="append"&&is_func){
         if(obj.type!=OBJ_ARRAY)
@@ -160,8 +160,26 @@ Object run_node(Node* node) {
         obj.list.emplace_back(args[0]);
         if(obj.obj_ptr.scope) AssignObject(*obj.obj_ptr, obj);
       }
+      else if(name=="length"&&!is_func){
+        if(obj.type==OBJ_ARRAY)
+          obj.v_int=obj.list.size();
+        else if(obj.type==OBJ_STRING)
+          obj.v_int=obj.v_str.length();
+        else
+          error(nd->token->pos,"object is not array or string");
+        
+        obj.type=OBJ_INT;
+      }
+      else if(name=="sqrt"&&!is_func){
+        if(obj.type==OBJ_INT)
+          obj.v_int=std::sqrt(obj.v_int);
+        else if(obj.type==OBJ_DOUBLE)
+          obj.v_dbl=std::sqrt(obj.v_dbl);
+        else
+          error(nd->token->pos,"object is not numeric");
+      }
       else
-        goto errjmp;
+        error(node->token->pos,"object is not have member '"+name+"'");
 
       for(auto it=index_list.begin();it!=index_list.end();it++) {
         if(obj.type!=OBJ_ARRAY)
@@ -180,8 +198,8 @@ Object run_node(Node* node) {
 
       return obj;
 
-    errjmp:;
-      error(node->token->pos,"object is not have member '"+name+"'");
+   // errjmp:;
+    //  error(node->token->pos,"object is not have member '"+name+"'");
     }
 
     case NODE_ASSIGN: {

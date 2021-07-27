@@ -119,9 +119,13 @@ Token* tokenize() {
       cur->obj.v_int = std::stoi(cur->str);
 
       if( peek() == '.' ) {
+        next();
+        if(!isdigit(peek())){
+          position--;
+          continue;
+        }
         cur->obj.type = OBJ_DOUBLE;
         cur->str += '.';
-        next();
 
         while( check() && isdigit(peek()) ) {
           cur->str += ch;

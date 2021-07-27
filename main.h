@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -11,6 +12,9 @@
 #include <cstdarg>
 #include <list>
 #include <map>
+#include <cmath>
+*/
+#include <bits/stdc++.h>
 
 #define __DEBUG__ 1
 
