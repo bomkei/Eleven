@@ -36,7 +36,7 @@ namespace {
 }
 
 Node::Node(Node::Type type)
-  :type(type) { }
+  :type(type), token(csmtok) { }
 
 Node::Node(Node::Type type, Node* lhs, Node* rhs, Token* token)
   :type(type), lhs(lhs), rhs(rhs), token(token ? token : csmtok) { }
@@ -102,6 +102,8 @@ Node* indexref() {
 Node* memberaccess() {
   auto x = indexref();
   while(check()&&consume(".")){
+    if(token->type!=TOK_IDENT)
+      error(csmtok->pos,"syntax error");
     x=new Node(NODE_MEMBERACCESS,x,indexref());
   }
   return x;

@@ -1,5 +1,12 @@
 #include "main.h"
 
+std::list<Node*> scope_list;
+
+namespace{
+  bool* loop_breaked;
+  bool* loop_continued;
+}
+
 Object& Object::ObjPointer::operator * () const {
   return scope->obj_list[index];
 }
@@ -15,15 +22,22 @@ void AdjustObjectType(Object& L, Object& R) {
 
 }
 
-std::list<Node*> scope_list;
+void AssignObject(Object& dest, Object& src) {
+  *dest.obj_ptr = src;
+  dest.obj_ptr->name = dest.name;
+  dest.obj_ptr->obj_ptr = dest.obj_ptr;
+}
+
+void push_scope(Node* node) {
+  scope_list.push_back(node);
+}
+
+void pop_scope() {
+  scope_list.pop_back();
+}
 
 Node* get_cur_scope() {
   return * scope_list.rbegin();
-}
-
-namespace{
-  bool* loop_breaked;
-  bool* loop_continued;
 }
 
 Object::ObjPointer find_var(std::string const& name) {
@@ -114,20 +128,18 @@ Object run_node(Node* node) {
       if(!dest.obj_ptr.scope)
         error(node->token->pos,"left side is rvalue");
 
-      *dest.obj_ptr = src;
-      dest.obj_ptr->name = dest.name;
-      //dest.obj_ptr->obj_ptr = dest.obj_ptr;
+      AssignObject(dest, src);
 
       return src;
     }
 
     case NODE_SCOPE: {
-      scope_list.push_back(node);
+      push_scope(node);
 
       for(auto&&i:node->list)
         run_node(i);
 
-      scope_list.pop_back();
+      pop_scope();
       break;
     }
 
@@ -172,7 +184,10 @@ Object run_node(Node* node) {
     }
 
     case NODE_FOREACH: {
+      push_scope(node);
+
       make_var(node->lhs);
+      
       auto iterator = run_node(node->lhs);
       
       auto p1=loop_breaked;
@@ -185,25 +200,29 @@ Object run_node(Node* node) {
 
       if(!iterator.obj_ptr.scope)
         error(node->token->pos,"iterator is rvalue");
-
+  
       u64 index = 0;
       while(1) {
         auto content = run_node(node->rhs);
+
         if(content.type!=OBJ_ARRAY)
           error(node->rhs->token->pos,"content is not an array");
-        
-        *iterator.obj_ptr = content.list[index++];
+
+        AssignObject(iterator, content.list[index]);
+        index++;
 
         *loop_breaked = false;
         *loop_continued = false;
+        
         run_node(node->list[0]);
 
-        if(*loop_breaked) break;
+        if(index>=content.list.size() || *loop_breaked) break;
       }
 
       loop_breaked=p1;
       loop_continued=p2;
 
+      pop_scope();
       break;
     }
 

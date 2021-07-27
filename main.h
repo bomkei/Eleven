@@ -30,6 +30,47 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
+namespace Utils {
+  template <class T, class F, class... Args>
+  i64 FindVector(std::vector<T>& vec, F compare, Args...args) {
+    for( i64 i = 0; i < vec.size(); i++ ) {
+      if( compare(vec[i], args...) )
+        return i;
+    }
+
+    return -1;
+  }
+
+  template <class... Args>
+  std::string Format(std::string const& fmt, Args...args) {
+    static char buf[0x1000];
+    sprintf(buf, fmt.c_str(), args...);
+    return buf;
+  }
+  
+  template <class T>
+  T Replace(T str, T const& find, T const& repl) {
+    if( str.empty() )
+      return str;
+    
+    for( u64 i = 0; i < str.length() - find.length(); ) {
+      if( str.substr(i, find.length()) == find ) {
+        str.erase(i, find.length());
+        str.insert(i, repl);
+        i += repl.length();
+      }
+      else
+        i++;
+    }
+
+    return str;
+  }
+
+  inline bool IsHexadecimal(char ch) {
+    return (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9');
+  }
+}
+
 enum {
   OBJ_INT,
   OBJ_CHAR,
@@ -85,6 +126,12 @@ struct Object {
 
     Object& operator * () const;
     Object* operator -> () const;
+
+  #if __DEBUG__
+    std::string ToString() const {
+      return Utils::Format("\tObjPointer %p: scope=%p index=%d", this, scope, index);
+    }
+  #endif
   };
 
   Type type = OBJ_NONE;
@@ -194,47 +241,6 @@ struct Program {
   
 
 };
-
-namespace Utils {
-  template <class T, class F, class... Args>
-  i64 FindVector(std::vector<T>& vec, F compare, Args...args) {
-    for( i64 i = 0; i < vec.size(); i++ ) {
-      if( compare(vec[i], args...) )
-        return i;
-    }
-
-    return -1;
-  }
-
-  template <class... Args>
-  std::string Format(std::string const& fmt, Args...args) {
-    static char buf[0x1000];
-    sprintf(buf, fmt.c_str(), args...);
-    return buf;
-  }
-  
-  template <class T>
-  T Replace(T str, T const& find, T const& repl) {
-    if( str.empty() )
-      return str;
-    
-    for( u64 i = 0; i < str.length() - find.length(); ) {
-      if( str.substr(i, find.length()) == find ) {
-        str.erase(i, find.length());
-        str.insert(i, repl);
-        i += repl.length();
-      }
-      else
-        i++;
-    }
-
-    return str;
-  }
-
-  inline bool IsHexadecimal(char ch) {
-    return (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9');
-  }
-}
 
 inline std::ostream& operator << (std::ostream& ost, Object const& obj) {
   return ost << obj.ToString();
