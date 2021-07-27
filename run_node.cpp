@@ -125,13 +125,9 @@ Object run_node(Node* node) {
       std::list<Node*> index_list;
 
       Node* nd=node->rhs;
-      while(1){
-        if(nd->type==NODE_INDEXREF) {
-          index_list.push_front(nd);
-          nd=nd->lhs;
-        }
-        else
-          break;
+      while(nd->type==NODE_INDEXREF) {
+        index_list.push_front(nd);
+        nd=nd->lhs;
       }
 
       auto const& name = nd->token->str;
