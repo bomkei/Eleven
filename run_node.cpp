@@ -179,6 +179,7 @@ Object run_node(Node* node) {
       else
         error(node->token->pos,"object is not have member '"+name+"'");
 
+      // 
       for(auto it=index_list.begin();it!=index_list.end();it++) {
         if(obj.type!=OBJ_ARRAY)
           error((*it)->token->pos,"object is not array");
@@ -195,9 +196,6 @@ Object run_node(Node* node) {
       }
 
       return obj;
-
-   // errjmp:;
-    //  error(node->token->pos,"object is not have member '"+name+"'");
     }
 
     case NODE_ASSIGN: {
@@ -217,8 +215,12 @@ Object run_node(Node* node) {
     case NODE_SCOPE: {
       push_scope(node);
 
-      for(auto&&i:node->list)
+      for(auto&&i:node->list) {
         run_node(i);
+
+        if(loop_breaked&&(*loop_breaked||*loop_continued))
+          break;
+      }
 
       pop_scope();
       break;
@@ -226,7 +228,9 @@ Object run_node(Node* node) {
 
     case NODE_IF: {
       auto cond = run_node(node->lhs);
-      if(cond.type!=OBJ_BOOL) error(node->token->pos,"condition must be boolean");
+
+      if(cond.type!=OBJ_BOOL)
+        error(node->token->pos,"condition is must boolean");
       
       if(cond.v_bool)
         run_node(node->rhs);
@@ -247,15 +251,18 @@ Object run_node(Node* node) {
       loop_breaked=&lb;
       loop_continued=&lc;
 
-      while(1){
+      while(!lb){
         auto cond = run_node(node->list[1]);
-        if(cond.type!=OBJ_BOOL) error(node->token->pos,"condition is must be boolean");
-        if(!cond.v_bool) break;
 
+        if(cond.type!=OBJ_BOOL)
+          error(node->token->pos,"condition is must be boolean");
+        
+        if(!cond.v_bool)
+          break;
+
+        lb = lc = 0;
         run_node(node->lhs);
-        lb=lc=0;
         run_node(node->list[2]);
-        if(lb)break;
       }
 
       loop_breaked=p1;
@@ -283,21 +290,20 @@ Object run_node(Node* node) {
         error(node->token->pos,"iterator is rvalue");
   
       u64 index = 0;
-      while(1) {
+      while(!lb) {
         auto content = run_node(node->rhs);
 
         if(content.type!=OBJ_ARRAY)
           error(node->rhs->token->pos,"content is not an array");
 
+        if(index>=content.list.size())
+          break;
+
         AssignObject(iterator, content.list[index]);
         index++;
 
-        *loop_breaked = false;
-        *loop_continued = false;
-        
+        lb=lc=0;
         run_node(node->list[0]);
-
-        if(index>=content.list.size() || *loop_breaked) break;
       }
 
       loop_breaked=p1;

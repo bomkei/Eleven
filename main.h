@@ -1,6 +1,5 @@
 #pragma once
 
-/*
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -13,8 +12,6 @@
 #include <list>
 #include <map>
 #include <cmath>
-*/
-#include <bits/stdc++.h>
 
 #define __DEBUG__ 1
 
@@ -239,6 +236,7 @@ struct Node {
 struct Program {
   
   static inline std::list<Program*> _list;
+  std::string source;
 
   static Program* GetInstance() {
     return *_list.rbegin();
@@ -253,7 +251,6 @@ struct Program {
     _list.pop_front();
   }
 
-  std::string source;
   
 
 };
