@@ -172,11 +172,13 @@ Object run_node(Node* node) {
       }
       else if(name=="sqrt"&&!is_func){
         if(obj.type==OBJ_INT)
-          obj.v_int=std::sqrt(obj.v_int);
+          obj.v_dbl=std::sqrt(obj.v_int);
         else if(obj.type==OBJ_DOUBLE)
           obj.v_dbl=std::sqrt(obj.v_dbl);
         else
           error(nd->token->pos,"object is not numeric");
+        
+        obj.type=OBJ_DOUBLE;
       }
       else
         error(node->token->pos,"object is not have member '"+name+"'");
