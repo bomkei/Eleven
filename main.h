@@ -66,6 +66,18 @@ namespace Utils {
     return str;
   }
 
+  template <class T>
+  void Reverse(T& arr) {
+    if(arr.size()<=2)
+      return;
+    
+    u64 max = arr.size() / 2 + arr.size() % 1;
+    
+    for(u64 i = 0; i < max; i++ ) {
+      std::swap(arr[i], arr[arr.size() - 1 - i]);
+    }
+  }
+
   inline bool IsHexadecimal(char ch) {
     return (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9');
   }

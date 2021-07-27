@@ -119,6 +119,71 @@ Object run_node(Node* node) {
       return obj.list[index.v_int];
     }
 
+    case NODE_MEMBERACCESS: {
+      auto obj = run_node(node->lhs);
+      
+      std::list<Node*> index_list;
+
+      Node* nd=node->rhs;
+      while(1){
+        if(nd->type==NODE_INDEXREF) {
+          index_list.push_front(nd);
+          nd=nd->lhs;
+        }
+        else
+          break;
+      }
+
+      auto const& name = nd->token->str;
+      auto is_func = nd->type==NODE_CALLFUNC;
+      std::vector<Object> args;
+
+      if(is_func){
+        for(auto&&i:nd->list)
+          args.emplace_back(run_node(i));
+      }
+
+      if(name=="reverse" && is_func){
+        if(obj.type==OBJ_ARRAY)
+          Utils::Reverse(obj.list);
+        else if(obj.type==OBJ_STRING)
+          Utils::Reverse(obj.v_str);
+        else
+          goto errjmp;
+      }
+      else if(name=="append"&&is_func){
+        if(obj.type!=OBJ_ARRAY)
+          error(nd->token->pos,"object is not array");
+        if(args.size()!=1)
+          error(nd->token->pos,"invalid arguments");
+        
+        obj.list.emplace_back(args[0]);
+        if(obj.obj_ptr.scope) AssignObject(*obj.obj_ptr, obj);
+      }
+      else
+        goto errjmp;
+
+      for(auto it=index_list.begin();it!=index_list.end();it++) {
+        if(obj.type!=OBJ_ARRAY)
+          error((*it)->token->pos,"object is not array");
+        
+        auto index = run_node((*it)->rhs);
+        
+        if(index.type!=OBJ_INT)
+          error((*it)->rhs->token->pos,"index is must be an integer");
+      
+        if(index.v_int<0||index.v_int>=obj.list.size())
+          error((*it)->rhs->token->pos,"index out of range");
+
+        obj = obj.list[index.v_int];
+      }
+
+      return obj;
+
+    errjmp:;
+      error(node->token->pos,"object is not have member '"+name+"'");
+    }
+
     case NODE_ASSIGN: {
       make_var(node->lhs);
 
