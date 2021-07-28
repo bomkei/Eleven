@@ -113,6 +113,12 @@ Node* unary() {
   if(consume("-"))
     return new Node(NODE_SUB,new Node,memberaccess());
   
+  if(consume("!"))
+    return new Node(NODE_LOGNOT,new Node,memberaccess());
+
+  if(consume("~"))
+    return new Node(NODE_BITNOT,new Node,memberaccess());
+
   return memberaccess();
 }
 
@@ -205,7 +211,7 @@ Node* log_Or(){
 }
 
 Node* assign() {
-  auto x = add();
+  auto x = log_Or();
 
   if(consume("=")){
     x=new Node(NODE_ASSIGN,x,assign());

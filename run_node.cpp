@@ -334,6 +334,20 @@ Object run_node(Node* node) {
       break;
     }
 
+    case NODE_LOGNOT:{ 
+      auto obj = run_node(node->lhs);
+      if(obj.type!=OBJ_BOOL) error(node->token->pos,"type mismatch");
+      obj.v_bool^=1;
+      return obj;
+    }
+
+    case NODE_BITNOT:{ 
+      auto obj = run_node(node->lhs);
+      if(obj.type!=OBJ_INT) error(node->token->pos,"type mismatch");
+      obj.v_int = ~obj.v_int;
+      return obj;
+    }
+
     default: {
       auto lhs = run_node(node->lhs);
       auto rhs = run_node(node->rhs);
@@ -348,6 +362,7 @@ Object run_node(Node* node) {
             case OBJ_CHAR: lhs.v_char += rhs.v_char; break;
             case OBJ_DOUBLE: lhs.v_dbl += rhs.v_dbl; break;
             case OBJ_STRING: lhs.v_str += rhs.v_str; break;
+            goto _Type_err;
           }
           break;
         
@@ -356,6 +371,7 @@ Object run_node(Node* node) {
             case OBJ_INT: lhs.v_int-=rhs.v_int; break;
             case OBJ_CHAR: lhs.v_char -= rhs.v_char; break;
             case OBJ_DOUBLE: lhs.v_dbl -= rhs.v_dbl; break;
+            goto _Type_err;
           }
           break;
         
@@ -364,6 +380,7 @@ Object run_node(Node* node) {
             case OBJ_INT: lhs.v_int*=rhs.v_int; break;
             case OBJ_CHAR: lhs.v_char *= rhs.v_char; break;
             case OBJ_DOUBLE: lhs.v_dbl *= rhs.v_dbl; break;
+            goto _Type_err;
           }
           break;
         
@@ -372,14 +389,93 @@ Object run_node(Node* node) {
             case OBJ_INT: lhs.v_int/=rhs.v_int; break;
             case OBJ_CHAR: lhs.v_char /= rhs.v_char; break;
             case OBJ_DOUBLE: lhs.v_dbl /= rhs.v_dbl; break;
+            goto _Type_err;
           }
           break;
+
+        case NODE_MOD: {
+          if(lhs.type!=OBJ_INT)
+            goto _Int_err;
+          
+          lhs.v_int%=rhs.v_int;
+          break;
+        }
+
+        case NODE_SHIFT: {
+          if(lhs.type!=OBJ_INT)
+            goto _Int_err;
+          
+          lhs.v_int <<= rhs.v_int;
+          break;
+        }
+
+        case NODE_BIGGER:
+          switch(lhs.type){
+            case OBJ_INT: lhs.v_bool = lhs.v_int > rhs.v_int; break;
+            case OBJ_CHAR: lhs.v_bool = lhs.v_char > rhs.v_char; break;
+            case OBJ_DOUBLE: lhs.v_bool = lhs.v_dbl > rhs.v_dbl; break;
+            goto _Type_err;
+          }
+          lhs.type=OBJ_BOOL;
+          break; 
         
+        case NODE_BIG_OR_EQ:
+          switch(lhs.type){
+            case OBJ_INT: lhs.v_bool = lhs.v_int >= rhs.v_int; break;
+            case OBJ_CHAR: lhs.v_bool = lhs.v_char >= rhs.v_char; break;
+            case OBJ_DOUBLE: lhs.v_bool = lhs.v_dbl >= rhs.v_dbl; break;
+            goto _Type_err;
+          }
+          lhs.type=OBJ_BOOL;
+          break; 
+        
+        case NODE_EQUAL:
+        case NODE_NOT_EQUAL:
+          switch(lhs.type){
+            case OBJ_INT: lhs.v_bool = lhs.v_int == rhs.v_int; break;
+            case OBJ_CHAR: lhs.v_bool = lhs.v_char == rhs.v_char; break;
+            case OBJ_DOUBLE: lhs.v_bool = lhs.v_dbl == rhs.v_dbl; break;
+            goto _Type_err;
+          }
+          lhs.type=OBJ_BOOL;
+          if(node->type==NODE_NOT_EQUAL) lhs.v_bool^=1;
+          break; 
+        
+        case NODE_BITAND:
+          if(lhs.type!=OBJ_INT) goto _Type_err;
+          lhs.v_int&=rhs.v_int;
+          break;
+        
+        case NODE_BITXOR:
+          if(lhs.type!=OBJ_INT) goto _Type_err;
+          lhs.v_int^=rhs.v_int;
+          break;
+        
+        case NODE_BITOR:
+          if(lhs.type!=OBJ_INT) goto _Type_err;
+          lhs.v_int|=rhs.v_int;
+          break;
+        
+        case NODE_LOGAND:
+          if(lhs.type!=OBJ_BOOL) goto _Type_err;
+          lhs.v_bool &= rhs.v_bool;
+          break;
+
+        case NODE_LOGOR:
+          if(lhs.type!=OBJ_BOOL) goto _Type_err;
+          lhs.v_bool |= rhs.v_bool;
+          break;
 
       }
 
       
       return lhs;
+
+    _Int_err:;
+      error(node->token->pos,"cannot use this operator to not integer object");
+
+    _Type_err:;
+      error(node->token->pos,"type mismatch");
     }
   }
   
