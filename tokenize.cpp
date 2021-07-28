@@ -78,8 +78,28 @@ namespace {
 }
 
 void error(Token::Position pos, std::string const& msg) {
-  std::cout << "pos=" << pos << ": " << msg << std::endl;
-  
+  auto const& src = Program::GetInstance()->source;
+
+  u64 line_begin=0;
+  u64 line_end=src.length();
+  u64 line_num=1;
+
+  for(u64 i=0;i<pos;i++){
+    if(src[i]=='\n'){
+      line_begin=i+1;
+      line_num++;
+    }
+  }
+
+  for(u64 i=pos;i<line_end;i++){
+    if(src[i]=='\n'){
+      line_end=i;
+      break;
+    }
+  }
+
+  printf("\n%6lld|%s\n",line_num,src.substr(line_begin,line_end-line_begin).c_str());
+  printf("       %s^ %s\n",std::string(pos-line_begin,' ').c_str(),msg.c_str());
   exit(1);
 }
 
