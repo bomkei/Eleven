@@ -166,7 +166,7 @@ Object run_node(Node* node) {
         
         obj.type=OBJ_INT;
       }
-      else if(name=="sqrt"&&!is_func){
+      else if(name=="sqrt"&&is_func){
         if(obj.type==OBJ_INT)
           obj.v_dbl=std::sqrt(obj.v_int);
         else if(obj.type==OBJ_DOUBLE)
