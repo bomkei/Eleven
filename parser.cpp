@@ -275,6 +275,12 @@ Node* stmt() {
     return node;
   }
 
+  if(consume("while")){
+    auto node = new Node(NODE_WHILE);
+    node->lhs= expr();
+    
+  }
+
   if(consume("break")){
     auto x = new Node(NODE_BREAK);
     expect(";");

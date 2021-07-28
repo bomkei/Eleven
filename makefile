@@ -1,5 +1,5 @@
-CXX				:= g++-11
-CC				:= gcc-11
+CXX				:= clang++
+CC				:= clang
 
 TARGET		:= eleven
 OBJDIR		:= build
@@ -11,14 +11,8 @@ OFILES		:= \
 		$(patsubst %.c, $(OBJDIR)/%.o, $(notdir $(CFILES)))
 
 CFLAGS		?= -O2 -Wall
-CXXFLAGS	:= $(CFLAGS) -std=gnu++23 -Wno-psabi
+CXXFLAGS	:= $(CFLAGS) -std=gnu++20 -Wno-psabi
 LDFLAGS		:= -Wl,--gc-sections
-
-ifeq ($(OS),Windows_NT)
-  EXT = exe
-else
-  EXT = out
-endif
 
 all: $(TARGET)
 
@@ -26,7 +20,7 @@ debug:
 	@$(MAKE) --no-print-directory CFLAGS='-g -O2 -Wall -Wextra'
 
 clean:
-	@rm -rf $(OBJDIR) $(TARGET).$(EXT)
+	@rm -rf $(OBJDIR) $(TARGET)
 
 re: clean all
 
@@ -42,4 +36,4 @@ $(OBJDIR)/%.o: %.cpp $(wildcard *.h)
 
 $(TARGET): $(OFILES)
 	@echo linking...
-	@$(CXX) $(LDFLAGS) $^ -o $@.$(EXT)
+	@$(CXX) $(LDFLAGS) $^ -o $@

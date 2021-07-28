@@ -176,8 +176,11 @@ Object run_node(Node* node) {
         
         obj.type=OBJ_DOUBLE;
       }
+      else if(name=="abs"&&is_func){
+
+      }
       else
-        error(node->token->pos,"object is not have member '"+name+"'");
+        error(nd->token->pos,"object is not have member '"+name+"'");
 
       // 
       for(auto it=index_list.begin();it!=index_list.end();it++) {
