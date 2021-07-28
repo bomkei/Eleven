@@ -121,6 +121,7 @@ Node* mul() {
   while( check() )
     if(consume("*")) x=new Node(NODE_MUL,x,unary());
     else if(consume("/")) x=new Node(NODE_DIV,x,unary());
+    else if(consume("%")) x=new Node(NODE_MOD,x,unary());
     else break;
   return x;
 }
@@ -131,6 +132,75 @@ Node* add() {
     if(consume("+")) x=new Node(NODE_ADD,x,mul());
     else if(consume("-")) x=new Node(NODE_SUB,x,mul());
     else break;
+  return x;
+}
+
+Node* shift() {
+  auto x=add();
+  while(check()){
+    if(consume("<<")) x=new Node(NODE_SHIFT,x,add());
+    else if(consume(">>")) x=new Node(NODE_SHIFT,add(),x);
+    else break;
+  }
+  return x;
+}
+
+Node* compare(){
+  auto x=shift();
+  while(check()){
+    if(consume(">")) x=new Node(NODE_BIGGER,x,shift());
+    else if(consume("<")) x=new Node(NODE_BIGGER,shift(),x);
+    else if(consume(">=")) x=new Node(NODE_BIG_OR_EQ,x,shift());
+    else if(consume("<=")) x=new Node(NODE_BIG_OR_EQ,shift(),x);
+    else break;
+  }
+  return x;
+}
+
+Node* equal(){
+  auto x=compare();
+  while(check()){
+    if(consume("==")) x=new Node(NODE_EQUAL,x,compare());
+    else if(consume("!=")) x=new Node(NODE_NOT_EQUAL,x,compare());
+    else break;
+  }
+  return x;
+}
+
+Node* bit_And() {
+  auto x=equal();
+  while(check()&&consume("&"))
+    x=new Node(NODE_BITAND,x,equal());
+  return x;
+}
+
+Node* bit_Xor(){
+  auto x=bit_And();
+  
+  while(check()&&consume("^"))
+    x=new Node(NODE_BITXOR,x,bit_And());
+
+  return x;
+}
+
+Node* bit_Or(){
+  auto x=bit_Xor();
+  while(check()&&consume("|"))
+    x=new Node(NODE_BITOR,x,bit_Xor());
+  return x;
+}
+
+Node* log_And(){
+  auto x=bit_Or();
+  while(check()&&consume("&&"))
+    x=new Node(NODE_LOGAND,x,bit_Or());
+  return x;
+}
+
+Node* log_Or(){
+  auto x=log_And();
+  while(check()&&consume("||"))
+    x=new Node(NODE_LOGOR,x,log_And());
   return x;
 }
 
