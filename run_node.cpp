@@ -351,6 +351,9 @@ Object run_node(Node* node) {
       return obj;
     }
 
+    case NODE_FUNCTION:
+      break;
+
     default: {
       auto lhs = run_node(node->lhs);
       auto rhs = run_node(node->rhs);

@@ -276,9 +276,15 @@ Node* stmt() {
   }
 
   if(consume("while")){
-    auto node = new Node(NODE_WHILE);
-    node->lhs= expr();
-    
+    return new Node(NODE_WHILE,expr(),stmt(),csmtok);
+  }
+
+  if(consume("do")){
+    expect_s("{");
+    auto node = new Node(NODE_DOWHILE,stmt(),nullptr);
+    expect("while");
+    node->rhs = expr();
+    return node;
   }
 
   if(consume("break")){
@@ -301,6 +307,30 @@ Node* stmt() {
     return x;
   }
 
+  if(consume("def")){
+    if(token->type!=TOK_IDENT)
+      error(token->pos,"expect identifier");
+    
+    auto node = new Node(NODE_FUNCTION);
+    node->token = token;
+
+    next();
+    expect("(");
+
+    if(!consume(")")){
+      do {
+        if(token->type!=TOK_IDENT)
+          error(token->pos,"expect identifier");
+        
+        node->obj_list.emplace_back(token->obj);
+        next();
+      }while(consume(","));
+      expect(")");
+    }
+
+    node->lhs = stmt();
+    return node;
+  }
   
   auto x=expr();
   expect(";");
@@ -310,7 +340,7 @@ Node* stmt() {
 Node* parse(Token* tok) {
   token = tok;
   
- auto x = new Node(NODE_SCOPE);
+  auto x = new Node(NODE_SCOPE);
 
   while( check() ) {
     x->list.emplace_back(stmt());

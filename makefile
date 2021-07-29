@@ -1,7 +1,7 @@
 CXX				:= clang++
 CC				:= clang
 
-TARGET		:= eleven
+TARGET		:= eleven.out
 OBJDIR		:= build
 
 CFILES		:= $(wildcard *.c)
