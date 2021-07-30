@@ -17,7 +17,7 @@ LDFLAGS		:= -Wl,--gc-sections
 all: $(TARGET)
 
 debug:
-	@$(MAKE) --no-print-directory CFLAGS='-g -O2 -Wall -Wextra'
+	@$(MAKE) --no-print-directory CFLAGS='-O2 -Wall -Wextra -g'
 
 clean:
 	@rm -rf $(OBJDIR) $(TARGET)

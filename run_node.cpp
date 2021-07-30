@@ -5,6 +5,8 @@ std::list<Node*> scope_list;
 namespace{
   bool* loop_breaked;
   bool* loop_continued;
+
+  Object* func_ret_obj;
 }
 
 Object& Object::ObjPointer::operator * () const {
@@ -51,6 +53,16 @@ Object::ObjPointer find_var(std::string const& name) {
   return { };
 }
 
+Node* find_func(std::string const& name) {
+  for(auto it=scope_list.rbegin(); it!=scope_list.rend(); it++ ) {
+    for(auto&& i : (*it)->functions)
+      if( i->token->str == name )
+        return i;
+  }
+
+  return nullptr;
+}
+
 void make_var(Node* node) {
   if(node->type!=NODE_VARIABLE)
     return;
@@ -85,12 +97,35 @@ Object run_node(Node* node) {
       for(auto&&i:node->list)
         args.emplace_back(run_node(i));
       
-      if(name=="print"){
+      auto ptr = find_func(name);
+      if(ptr){
+        Object ret;
+        auto p1 = func_ret_obj;
+        
+        if( ptr->obj_list.size() != args.size() )
+          error(node->token->pos,"no matching arguments");
+
+        auto bak = ptr->obj_list;
+        ptr->obj_list = std::move(Utils::CreateVector(args, ptr->obj_list, [] (auto x, auto y) { x.name = y.name; return x; }));
+        //ptr->obj_list = std::move(args);
+        push_scope(ptr);
+
+        func_ret_obj = &ret;
+        run_node(ptr->lhs);
+
+        pop_scope();
+
+        func_ret_obj = p1;
+        ptr->obj_list = bak;
+
+        return ret;
+      }
+      else if(name=="print"){
         for(auto&&i:args) std::cout << i;
         std::cout << std::endl;
       }
-      
-      break;
+      else
+        error(node->token->pos, "undefined func");
     }
     
     case NODE_ARRAY: {
@@ -125,62 +160,74 @@ Object run_node(Node* node) {
       std::list<Node*> index_list;
 
       Node* nd=node->rhs;
-      while(nd->type==NODE_INDEXREF) {
+      while( nd->type == NODE_INDEXREF ) {
         index_list.push_front(nd);
-        nd=nd->lhs;
+        nd = nd -> lhs;
       }
 
       auto const& name = nd->token->str;
-      auto is_func = nd->type==NODE_CALLFUNC;
+      auto is_func = nd->type == NODE_CALLFUNC;
       std::vector<Object> args;
 
-      if(is_func){
-        for(auto&&i:nd->list)
+      if( is_func ) {
+        for( auto&& i : nd->list )
           args.emplace_back(run_node(i));
       }
 
-      if(name=="reverse" && is_func){
-        if(obj.type==OBJ_ARRAY)
+      // reverse
+      if( name == "reverse" && is_func ){
+        if( obj.type == OBJ_ARRAY )
           Utils::Reverse(obj.list);
-        else if(obj.type==OBJ_STRING)
+        else if( obj.type == OBJ_STRING )
           Utils::Reverse(obj.v_str);
         else
-          error(nd->token->pos,"object is not array or string");
+          error(nd->token->pos, "object is not array or string");
       }
-      else if(name=="append"&&is_func){
-        if(obj.type!=OBJ_ARRAY)
-          error(nd->token->pos,"object is not array");
-        if(args.size()!=1)
-          error(nd->token->pos,"invalid arguments");
+
+      // append
+      else if( name == "append" && is_func ){
+        if( obj.type != OBJ_ARRAY )
+          error(nd->token->pos, "object is not array");
+        if( args.size() != 1 )
+          error(nd->token->pos, "invalid arguments");
         
         obj.list.emplace_back(args[0]);
-        if(obj.obj_ptr.scope) AssignObject(*obj.obj_ptr, obj);
+        
+        if( obj.obj_ptr.scope )
+          AssignObject(*obj.obj_ptr, obj);
       }
-      else if(name=="length"&&!is_func){
-        if(obj.type==OBJ_ARRAY)
-          obj.v_int=obj.list.size();
-        else if(obj.type==OBJ_STRING)
-          obj.v_int=obj.v_str.length();
+
+      // length
+      else if( name == "length" && !is_func ){
+        if( obj.type == OBJ_ARRAY )
+          obj.v_int = obj.list.size();
+        else if( obj.type == OBJ_STRING )
+          obj.v_int = obj.v_str.length();
         else
-          error(nd->token->pos,"object is not array or string");
+          error(nd->token->pos, "object is not array or string");
         
         obj.type=OBJ_INT;
       }
-      else if(name=="sqrt"&&is_func){
-        if(obj.type==OBJ_INT)
-          obj.v_dbl=std::sqrt(obj.v_int);
-        else if(obj.type==OBJ_DOUBLE)
-          obj.v_dbl=std::sqrt(obj.v_dbl);
-        else
-          error(nd->token->pos,"object is not numeric");
-        
-        obj.type=OBJ_DOUBLE;
-      }
-      else if(name=="abs"&&is_func){
 
+      // sqrt
+      else if( name == "sqrt" && is_func ){
+        if( obj.type == OBJ_INT )
+          obj.v_dbl = std::sqrt(obj.v_int);
+        else if( obj.type == OBJ_DOUBLE )
+          obj.v_dbl = std::sqrt(obj.v_dbl);
+        else
+          error(nd->token->pos, "object is not numeric");
+        
+        obj.type = OBJ_DOUBLE;
       }
+
+      // abs
+      else if( name == "abs" && is_func ){
+        
+      }
+      
       else
-        error(nd->token->pos,"object is not have member '"+name+"'");
+        error(nd->token->pos, "object is not have member '" + name + "'");
 
       // 
       for(auto it=index_list.begin();it!=index_list.end();it++) {
@@ -258,7 +305,7 @@ Object run_node(Node* node) {
         auto cond = run_node(node->list[1]);
 
         if(cond.type!=OBJ_BOOL)
-          error(node->token->pos,"condition is must be boolean");
+          error(node->token->pos,"condition is must boolean");
         
         if(!cond.v_bool)
           break;
@@ -333,7 +380,10 @@ Object run_node(Node* node) {
     }
 
     case NODE_RETURN: {
+      if(!func_ret_obj)
+        error(node->token->pos,"here is not inner of function");
 
+      *func_ret_obj = run_node(node->lhs);
       break;
     }
 
@@ -351,8 +401,15 @@ Object run_node(Node* node) {
       return obj;
     }
 
-    case NODE_FUNCTION:
+    case NODE_FUNCTION: {
+      if( find_func(node->token->str) ) {
+        error(node->token->pos,"already defined");
+      }
+
+      get_cur_scope()->functions.emplace_back(node);
+
       break;
+    }
 
     default: {
       auto lhs = run_node(node->lhs);

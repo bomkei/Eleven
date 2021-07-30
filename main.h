@@ -79,6 +79,20 @@ namespace Utils {
     }
   }
 
+  template <class T, class F>
+  std::vector<T> CreateVector(std::vector<T> const& vec1, std::vector<T> const& vec2, F fun){
+    std::vector<T> ret;
+
+    if( vec1.size() != vec2.size() )
+      throw 0;
+
+    for( u64 i = 0; i < vec1.size(); i++ ) {
+      ret.emplace_back(fun(vec1[i], vec2[i]));
+    }
+
+    return ret;
+  }
+
   inline bool IsHexadecimal(char ch) {
     return (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch >= '0' && ch <= '9');
   }
@@ -90,7 +104,6 @@ enum {
   OBJ_DOUBLE,
   OBJ_STRING,
   OBJ_BOOL,
-  OBJ_TUPLE,
   OBJ_ARRAY,
   OBJ_NONE,
 };
@@ -195,14 +208,13 @@ struct Object {
       case OBJ_BOOL:
         return v_bool ? "True" : "False";
 
-      case OBJ_TUPLE:
       case OBJ_ARRAY: {
         std::string s;
         for(u64 i=0;i<list.size();i++){
           s+=list[i].ToString();
           if(i<list.size()-1) s+=", ";
         }
-        return (type==OBJ_TUPLE?"(":"[")+s+(type==OBJ_TUPLE?")":"]");
+        return "[" + s + "]";
       }
 
       case OBJ_NONE:
@@ -212,11 +224,6 @@ struct Object {
     return "";
   }
 
-  //bool Eval() const {
-    
-
-   // return false;
-  //}
 };
 
 struct Token {
@@ -246,6 +253,7 @@ struct Node {
   Node* lhs = nullptr;
   Node* rhs = nullptr;
   std::vector<Node*> list;
+  std::vector<Node*> functions;
   std::vector<Object> obj_list;
 
   Node(Type type = NODE_VALUE);
